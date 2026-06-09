@@ -6,8 +6,8 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const app = express();
 const port = 3000;
 
-const secretsClient = new SecretsManagerClient({ region: "us-east-1" });
-const s3Client = new S3Client({ region: "us-east-1" });
+const secretsClient = new SecretsManagerClient({ region: "eu-west-1" });
+const s3Client = new S3Client({ region: "eu-west-1" });
 
 async function getSecrets() {
     const response = await secretsClient.send(new GetSecretValueCommand({ SecretId: "frontend-config" }));
