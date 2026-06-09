@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>S3 Image Upload & Gallery</title>
+    <style>
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .gallery img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Upload Image to S3</h2>
+    <input type="file" id="fileInput" accept="image/*" />
+    <button onclick="uploadImage()">Upload</button>
+
+    <hr />
+
+    <h2>Uploaded Images</h2>
+    <div id="imageGallery" class="gallery">Loading images...</div>
+
+    <script>
+        // Load images automatically when the page opens
+        window.onload = fetchImages;
+
+        async function fetchImages() {
+            const gallery = document.getElementById('imageGallery');
+            try {
+                const res = await fetch('/list-images');
+                const images = await res.json();
+                
+                if (images.length === 0) {
+                    gallery.innerHTML = '<p>No images uploaded yet.</p>';
+                    return;
+                }
+
+                // Clear "Loading..." and map images into HTML
+                gallery.innerHTML = images.map(url => `<img src="${url}" alt="Uploaded image" />`).join('');
+            } catch (err) {
+                gallery.innerHTML = '<p>Error loading images.</p>';
+                console.error(err);
+            }
+        }
+
+        async function uploadImage() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return alert('Select a file first!');
+
+            // 1. Get presigned URL from backend
+            const res = await fetch(`/get-upload-url?filename=${file.name}`);
+            const { uploadUrl } = await res.json();
+
+            // 2. Upload directly to S3
+            const uploadRes = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type }
+            });
+
+            if (uploadRes.ok) {
+                alert('Uploaded successfully!');
+                document.getElementById('fileInput').value = ''; // Clear input
+                fetchImages(); // <--- Refresh the gallery right below instantly!
+            } else {
+                alert('Upload failed.');
+            }
+        }
+    </script>
+</body>
+</html>
