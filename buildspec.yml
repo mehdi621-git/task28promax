@@ -1,5 +1,9 @@
 version: 0.2
-
+env:
+  # This is the correct way to pull individual keys out of a Secrets Manager JSON object
+  secrets-manager:
+    BUCKET_NAME: "frontend-config:BUCKET_NAME"
+    AWS_REGION_CONFIG: "frontend-config:REGION"
 phases:
   pre_build:
     commands:
