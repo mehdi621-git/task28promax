@@ -8,5 +8,7 @@ containerPort: 3000
 
 service:
   type: LoadBalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
   port: 80
   targetPort: 3000
