@@ -1,5 +1,8 @@
 apiVersion: v1
 kind: Service
+service:
+  annotations:
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 metadata:
   name: frontend-app
 spec:
