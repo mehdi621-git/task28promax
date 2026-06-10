@@ -24,6 +24,8 @@ phases:
       - chmod 700 get_helm.sh
       - ./get_helm.sh
       - helm version
+      - pwd
+      - ls -R
       - echo "Configuring kubeconfig for EKS..."
       - aws eks update-kubeconfig --region eu-west-1 --name task23
       - kubectl get nodes
