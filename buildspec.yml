@@ -19,14 +19,14 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
   phases:
-  install:
-    commands:
-      - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-      - chmod 700 get_helm.sh
-      - ./get_helm.sh
-      - helm version
-      - echo Deploying to Kubernetes cluster via Helm...
-      - helm upgrade --install frontend-prod ./charts/frontend-app \
-          --set image.repository=$REPOSITORY_URI \
-          --set image.tag=$CODEBUILD_RESOLVED_SOURCE_VERSION \
-          --namespace default
+    install:
+      commands:
+        - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        - chmod 700 get_helm.sh
+        - ./get_helm.sh
+        - helm version
+        - echo Deploying to Kubernetes cluster via Helm...
+        - helm upgrade --install frontend-prod ./charts/frontend-app \
+            --set image.repository=$REPOSITORY_URI \
+            --set image.tag=$CODEBUILD_RESOLVED_SOURCE_VERSION \
+            --namespace default
