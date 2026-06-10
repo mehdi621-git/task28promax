@@ -25,7 +25,4 @@ phases:
       - ./get_helm.sh
       - helm version
       - echo Deploying to Kubernetes cluster via Helm...
-      - helm upgrade --install frontend-prod ./charts/frontend-app \
-          --set image.repository=$REPOSITORY_URI \
-          --set image.tag=$CODEBUILD_RESOLVED_SOURCE_VERSION \
-          --namespace default
+      - helm upgrade --install frontend-prod ./charts/frontend-app --set image.repository=$REPOSITORY_URI --set image.tag=$CODEBUILD_RESOLVED_SOURCE_VERSION --namespace default
