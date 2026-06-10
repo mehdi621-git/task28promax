@@ -21,6 +21,8 @@ phases:
       - ls -R
       -  pwd
       - ls -R charts
+      - aws sts get-caller-identity
+      - kubectl get ns
   install:
     commands:
        - curl -fsSL -o get-helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
