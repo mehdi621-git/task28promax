@@ -20,6 +20,12 @@ phases:
       - docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
   install:
     commands:
+       - echo "=== CURRENT DIRECTORY ==="
+       -  pwd
+       -  echo "=== ROOT FILES ==="
+       -  ls -la
+       -  echo "=== FULL STRUCTURE ==="
+       -  ls -R
        - curl -fsSL -o get-helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
        - chmod 700 get-helm.sh
        - ./get-helm.sh
