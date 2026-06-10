@@ -19,10 +19,13 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - ls -R
+      -  pwd
+      - ls -R charts
   install:
     commands:
        - curl -fsSL -o get-helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
        - chmod 700 get-helm.sh
+       - cd $CODEBUILD_SRC_DIR
        - ./get-helm.sh
        - echo "Configuring kubeconfig for EKS..."
        - aws eks update-kubeconfig --region eu-west-1 --name task23
