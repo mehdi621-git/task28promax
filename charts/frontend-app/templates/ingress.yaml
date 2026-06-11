@@ -1,7 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "myapp.fullname" . }}
+  name: {{ include "mychart.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
@@ -13,6 +14,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "myapp.fullname" . }}
+                name: {{ include "mychart.fullname" . }}
                 port:
                   number: {{ .Values.service.port }}
