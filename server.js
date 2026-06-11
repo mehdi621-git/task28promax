@@ -23,9 +23,14 @@ app.get('/get-upload-url', async (req, res) => {
         const command = new PutObjectCommand({
             Bucket: secrets.BUCKET_NAME,
             Key: fileName,
+            ContentType: req.query.contentType || 'image/jpeg', // ← add this
         });
 
-        const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        const uploadUrl = await getSignedUrl(s3Client, command, { 
+            expiresIn: 3600,
+            unhoistableHeaders: new Set(), // ← prevents checksum headers
+        });
+
         res.json({ uploadUrl, fileName });
     } catch (err) {
         res.status(500).send(err.message);
