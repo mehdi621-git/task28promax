@@ -1,4 +1,5 @@
 replicaCount: 2
+
 image:
   repository: 533267084857.dkr.ecr.eu-west-1.amazonaws.com/frontend28
   tag: latest
@@ -6,14 +7,9 @@ image:
 containerPort: 3000
 
 service:
-  type: LoadBalancer
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+  type: ClusterIP
   port: 80
   targetPort: 3000
 
 ingress:
   host: www.goprac.store
-
-service:
-  port: 80
