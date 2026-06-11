@@ -54,28 +54,26 @@
         }
 
         async function uploadImage() {
-            const file = document.getElementById('fileInput').files[0];
-            if (!file) return alert('Select a file first!');
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) return alert('Select a file first!');
 
-            // 1. Get presigned URL from backend
-            const res = await fetch(`/get-upload-url?filename=${file.name}`);
-            const { uploadUrl } = await res.json();
+    const res = await fetch(`/get-upload-url?filename=${file.name}&contentType=${file.type}`);
+    const { uploadUrl } = await res.json();
 
-            // 2. Upload directly to S3
-            const uploadRes = await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type }
-            });
+    const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type }  // ← must match what backend used
+    });
 
-            if (uploadRes.ok) {
-                alert('Uploaded successfully!');
-                document.getElementById('fileInput').value = ''; // Clear input
-                fetchImages(); // <--- Refresh the gallery right below instantly!
-            } else {
-                alert('Upload failed.');
-            }
-        }
+    if (uploadRes.ok) {
+        alert('Uploaded successfully!');
+        document.getElementById('fileInput').value = '';
+        fetchImages();
+    } else {
+        alert('Upload failed.');
+    }
+}
     </script>
 </body>
 </html>
