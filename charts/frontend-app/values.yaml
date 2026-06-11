@@ -11,3 +11,9 @@ service:
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
   port: 80
   targetPort: 3000
+
+ingress:
+  host: yourdomain.com
+
+service:
+  port: 80
