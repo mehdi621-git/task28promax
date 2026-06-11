@@ -7,42 +7,42 @@ const app = express();
 const port = 3000;
 
 const secretsClient = new SecretsManagerClient({ region: "eu-west-1" });
-const s3Client = new S3Client({ region: "eu-west-1" });
+
+// Disable checksum here at client level
+const s3Client = new S3Client({ 
+    region: "eu-west-1",
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED"
+});
 
 async function getSecrets() {
     const response = await secretsClient.send(new GetSecretValueCommand({ SecretId: "frontend-config" }));
     return JSON.parse(response.SecretString);
 }
 
-// 1. Endpoint to generate a upload link
 app.get('/get-upload-url', async (req, res) => {
     try {
         const secrets = await getSecrets();
         const fileName = `${Date.now()}-${req.query.filename}`;
-        
+        const contentType = req.query.contentType || 'image/jpeg';
+
         const command = new PutObjectCommand({
             Bucket: secrets.BUCKET_NAME,
             Key: fileName,
-            ContentType: req.query.contentType || 'image/jpeg', // ← add this
+            ContentType: contentType,
         });
 
-        const uploadUrl = await getSignedUrl(s3Client, command, { 
-            expiresIn: 3600,
-            unhoistableHeaders: new Set(), // ← prevents checksum headers
-        });
-
+        const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
         res.json({ uploadUrl, fileName });
     } catch (err) {
         res.status(500).send(err.message);
     }
 });
 
-// 2. NEW ENDPOINT: Lists images from S3 and generates temporary view links
 app.get('/list-images', async (req, res) => {
     try {
         const secrets = await getSecrets();
-        
-        // Fetch list of objects from S3
+
         const listCommand = new ListObjectsV2Command({
             Bucket: secrets.BUCKET_NAME
         });
@@ -52,7 +52,6 @@ app.get('/list-images', async (req, res) => {
             return res.json([]);
         }
 
-        // Generate a secure, temporary view URL for each file found
         const imageUrls = await Promise.all(
             s3Data.Contents.map(async (file) => {
                 const getCommand = new GetObjectCommand({
