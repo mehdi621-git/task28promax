@@ -2,78 +2,453 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>S3 Image Upload & Gallery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S3 Image Gallery</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
     <style>
-        .gallery {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 20px;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f0;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 2rem 1rem;
         }
-        .gallery img {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .upload-card {
+            background: #fff;
+            border: 0.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone {
+            border: 1.5px dashed rgba(0,0,0,0.18);
             border-radius: 8px;
-            border: 1px solid #ccc;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            position: relative;
+        }
+
+        .upload-zone:hover, .upload-zone.drag-over {
+            background: #f0f0f5;
+            border-color: rgba(83,74,183,0.5);
+        }
+
+        .upload-zone i {
+            font-size: 32px;
+            color: #888;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .upload-zone span {
+            color: #534AB7;
+            font-weight: 500;
+        }
+
+        #fileInput {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 1rem;
+            padding: 10px 20px;
+            background: #534AB7;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            width: fit-content;
+        }
+
+        .upload-btn:hover { background: #3C3489; }
+        .upload-btn:active { transform: scale(0.98); }
+        .upload-btn:disabled { background: #b0aed8; cursor: not-allowed; }
+
+        .selected-file {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 0.75rem;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .selected-file i { color: #534AB7; }
+
+        .progress-bar-wrap {
+            margin-top: 1rem;
+            background: #eee;
+            border-radius: 99px;
+            height: 6px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #534AB7;
+            border-radius: 99px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .status-msg {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 0.75rem;
+            font-size: 13px;
+            display: none;
+        }
+
+        .status-msg.success { color: #3B6D11; }
+        .status-msg.error { color: #A32D2D; }
+
+        .gallery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .gallery-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: #534AB7;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+
+        .refresh-btn:hover { background: #eeedfe; }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .img-wrapper {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #e8e8e4;
+            border: 0.5px solid rgba(0,0,0,0.1);
+        }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .img-wrapper img.loaded { opacity: 1; }
+
+        .img-loader {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.3s;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2.5px solid rgba(83,74,183,0.2);
+            border-top-color: #534AB7;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .img-loader span {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .img-tick {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59,109,17,0.15);
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+        }
+
+        .img-tick i {
+            font-size: 28px;
+            color: #3B6D11;
+        }
+
+        .img-wrapper:hover .img-tick { opacity: 1; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .empty-state i {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; color: #e0e0e0; }
+            .upload-card { background: #242424; border-color: rgba(255,255,255,0.1); }
+            .upload-zone { border-color: rgba(255,255,255,0.15); }
+            .upload-zone:hover { background: #2e2e2e; }
+            .upload-zone p { color: #aaa; }
+            .img-wrapper { background: #2e2e2e; border-color: rgba(255,255,255,0.08); }
+            .img-loader span { color: #aaa; }
+            h1 { color: #e0e0e0; }
         }
     </style>
 </head>
 <body>
+<div class="container">
+    <h1>Image Gallery</h1>
+    <p class="subtitle">Upload and manage your images stored in S3</p>
 
-    <h2>Upload Image to S3</h2>
-    <input type="file" id="fileInput" accept="image/*" />
-    <button onclick="uploadImage()">Upload</button>
+    <div class="upload-card">
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept="image/*" />
+            <i class="ti ti-cloud-upload" aria-hidden="true"></i>
+            <p>Drag & drop an image or <span>browse</span></p>
+        </div>
 
-    <hr />
+        <div class="selected-file" id="selectedFile" style="display:none">
+            <i class="ti ti-photo" aria-hidden="true"></i>
+            <span id="fileName"></span>
+        </div>
 
-    <h2>Uploaded Images</h2>
-    <div id="imageGallery" class="gallery">Loading images...</div>
+        <div class="progress-bar-wrap" id="progressWrap">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
 
-    <script>
-        // Load images automatically when the page opens
-        window.onload = fetchImages;
+        <div class="status-msg" id="statusMsg"></div>
 
-        async function fetchImages() {
-            const gallery = document.getElementById('imageGallery');
-            try {
-                const res = await fetch('/list-images');
-                const images = await res.json();
-                
-                if (images.length === 0) {
-                    gallery.innerHTML = '<p>No images uploaded yet.</p>';
-                    return;
-                }
+        <button class="upload-btn" id="uploadBtn" onclick="uploadImage()">
+            <i class="ti ti-upload" aria-hidden="true"></i>
+            Upload image
+        </button>
+    </div>
 
-                // Clear "Loading..." and map images into HTML
-                gallery.innerHTML = images.map(url => `<img src="${url}" alt="Uploaded image" />`).join('');
-            } catch (err) {
-                gallery.innerHTML = '<p>Error loading images.</p>';
-                console.error(err);
-            }
+    <div class="gallery-header">
+        <h2>Uploaded images</h2>
+        <button class="refresh-btn" onclick="fetchImages()">
+            <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+        </button>
+    </div>
+
+    <div class="gallery" id="imageGallery"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const selectedFile = document.getElementById('selectedFile');
+    const fileNameEl = document.getElementById('fileName');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressBar = document.getElementById('progressBar');
+    const statusMsg = document.getElementById('statusMsg');
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) {
+            fileNameEl.textContent = fileInput.files[0].name;
+            selectedFile.style.display = 'flex';
+            hideStatus();
         }
-
-        async function uploadImage() {
-    const file = document.getElementById('fileInput').files[0];
-    if (!file) return alert('Select a file first!');
-
-    const res = await fetch(`/get-upload-url?filename=${file.name}&contentType=${file.type}`);
-    const { uploadUrl } = await res.json();
-
-    const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type }  // ← must match what backend used
     });
 
-    if (uploadRes.ok) {
-        alert('Uploaded successfully!');
-        document.getElementById('fileInput').value = '';
-        fetchImages();
-    } else {
-        alert('Upload failed.');
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            fileInput.files = e.dataTransfer.files;
+            fileNameEl.textContent = file.name;
+            selectedFile.style.display = 'flex';
+        }
+    });
+
+    function showStatus(msg, type) {
+        statusMsg.innerHTML = `<i class="ti ti-${type === 'success' ? 'circle-check' : 'alert-circle'}" aria-hidden="true"></i> ${msg}`;
+        statusMsg.className = `status-msg ${type}`;
+        statusMsg.style.display = 'flex';
     }
-}
-    </script>
+
+    function hideStatus() { statusMsg.style.display = 'none'; }
+
+    async function uploadImage() {
+        const file = fileInput.files[0];
+        if (!file) return showStatus('Please select an image first.', 'error');
+
+        uploadBtn.disabled = true;
+        progressWrap.style.display = 'block';
+        progressBar.style.width = '20%';
+        hideStatus();
+
+        try {
+            const res = await fetch(`/get-upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`);
+            const { uploadUrl } = await res.json();
+
+            progressBar.style.width = '50%';
+
+            const uploadRes = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 'Content-Type': file.type }
+            });
+
+            progressBar.style.width = '100%';
+
+            if (uploadRes.ok) {
+                showStatus('Image uploaded successfully!', 'success');
+                fileInput.value = '';
+                selectedFile.style.display = 'none';
+                setTimeout(() => { progressWrap.style.display = 'none'; progressBar.style.width = '0%'; }, 600);
+                fetchImages();
+            } else {
+                showStatus('Upload failed. Please try again.', 'error');
+                progressWrap.style.display = 'none';
+            }
+        } catch (err) {
+            showStatus('Something went wrong. Check your connection.', 'error');
+            progressWrap.style.display = 'none';
+        } finally {
+            uploadBtn.disabled = false;
+        }
+    }
+
+    function createImageCard(url) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'img-wrapper';
+
+        const loader = document.createElement('div');
+        loader.className = 'img-loader';
+        loader.innerHTML = '<div class="spinner"></div><span>Loading...</span>';
+
+        const img = document.createElement('img');
+        img.alt = 'Uploaded image';
+
+        const tick = document.createElement('div');
+        tick.className = 'img-tick';
+        tick.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i>';
+
+        img.onload = () => {
+            img.classList.add('loaded');
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 300);
+        };
+
+        img.onerror = () => {
+            loader.innerHTML = '<i class="ti ti-photo-off" style="font-size:24px;color:#ccc"></i><span>Failed</span>';
+        };
+
+        img.src = url;
+        wrapper.appendChild(loader);
+        wrapper.appendChild(img);
+        wrapper.appendChild(tick);
+        return wrapper;
+    }
+
+    async function fetchImages() {
+        const gallery = document.getElementById('imageGallery');
+        gallery.innerHTML = '';
+
+        const skeletons = Array.from({ length: 4 }, () => {
+            const s = document.createElement('div');
+            s.className = 'img-wrapper';
+            s.innerHTML = '<div class="img-loader"><div class="spinner"></div><span>Loading...</span></div>';
+            return s;
+        });
+        skeletons.forEach(s => gallery.appendChild(s));
+
+        try {
+            const res = await fetch('/list-images');
+            const images = await res.json();
+            gallery.innerHTML = '';
+
+            if (!images.length) {
+                gallery.innerHTML = '<div class="empty-state"><i class="ti ti-photo-off" aria-hidden="true"></i>No images uploaded yet.</div>';
+                return;
+            }
+
+            images.forEach(url => gallery.appendChild(createImageCard(url)));
+        } catch (err) {
+            gallery.innerHTML = '<div class="empty-state"><i class="ti ti-alert-circle" aria-hidden="true"></i>Error loading images.</div>';
+        }
+    }
+
+    window.onload = fetchImages;
+</script>
 </body>
 </html>
