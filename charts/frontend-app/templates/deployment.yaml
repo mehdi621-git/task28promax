@@ -12,7 +12,7 @@ spec:
       labels:
         app: frontend-app
     spec:
-      serviceAccountName: frontend-sa
+      serviceAccountName: newrole
       containers:
         - name: frontend-app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
