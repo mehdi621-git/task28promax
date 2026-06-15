@@ -22,3 +22,13 @@ spec:
                 name: frontend-app
                 port:
                   number: {{ .Values.service.port }}
+    - host: {{ .Values.ingress.host2 }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-app
+                port:
+                  number: {{ .Values.service.port }}
