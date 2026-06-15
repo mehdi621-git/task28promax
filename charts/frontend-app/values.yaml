@@ -13,3 +13,4 @@ service:
 
 ingress:
   host: www.goprac.store
+  host2: goprac.store
