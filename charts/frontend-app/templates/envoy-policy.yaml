@@ -1,0 +1,21 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: {{ .Release.Name }}-circuit-breaker
+  namespace: {{ .Release.Namespace }}
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ .Release.Name }}-frontend-route
+  
+  # --- ENVOY NATIVE CIRCUIT BREAKING & RETRIES ---
+  circuitBreaker:
+    maxConnections: 1024       # Max simultaneous network connections allowed
+    maxPendingRequests: 100   # Max requests waiting in queue before failing fast
+  
+  retry:
+    numRetries: 3              # Envoy will automatically retry 3 times if a pod glitches
+    retryOn:
+      - 5xx                    # Retry on server errors
+      - connect-failure        # Retry if network drops midway
